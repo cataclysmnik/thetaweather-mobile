@@ -12,6 +12,7 @@ import { fetchLocations, fetchWeatherForecast } from '../api/weather'
 import { weatherImages } from '../constants'
 
 import * as Progress from 'react-native-progress';
+import { getData, storeData } from '../utils/asyncStorage'
 
 export default function HomeScreen() {
     const [showSearch, toggleSearch] = useState(false);
@@ -20,15 +21,18 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(true);
 
     const handleLocation = (loc) => {
-        console.log('location: ', loc);
+        // console.log('location: ', loc);
         setLocations([]);
         toggleSearch(false);
+        setLoading(true);
         fetchWeatherForecast({
             cityName: loc.name,
             days: '7'
         }).then(data=>{
             setWeather(data);
-            console.log("got forecast", data);
+            setLoading(false);
+            storeData('city', loc.name);
+            // console.log("got forecast", data);
         })
     }
 
@@ -46,11 +50,16 @@ export default function HomeScreen() {
     }, [])
 
     const fetchMyWeatherData = async () => {
+        let myCity = await getData('city');
+        // Add location to here
+        let cityName = 'Chennai';
+        if(myCity) cityName = myCity; 
         fetchWeatherForecast({
-            cityName: 'Chennai',
+            cityName,
             days: '7'
         }).then(data => {
             setWeather(data);
+            setLoading(false);
         })
     }
     const handleTextDebounce = useCallback(debounce(handleSearch, 1000), []);
@@ -62,15 +71,13 @@ export default function HomeScreen() {
         <StatusBar style='light' />
         <Image blurRadius={70} source={require('../assets/images/bg.png')} className="absolute h-full w-full" />
 
-        {/* {
+        {
             loading? (
-
+                <View className="flex-1 flex-row justify-center items-center">
+                    <Progress.CircleSnail thickness={10} size={140} color="#0bb3b2" />
+                </View>
             ): (
-                
-            )
-        } */}
-
-        <SafeAreaView className="flex flex-1">
+                <SafeAreaView className="flex flex-1">
             {/* Search section */}
 
             <View style={{height: '7%'}} className="mx-4 relative z-50">
@@ -101,19 +108,21 @@ export default function HomeScreen() {
                         <View className="absolute self-center w-11/12 bg-gray-300 top-2 rounded-3xl" style={{ elevation: 10, zIndex:50}}>
                             {
                                 locations.map((loc, index) => {
-                                    let showBorder = index+1 != locations.length;
-                                    let borderClass = showBorder ? 'border-b-2 border-b-gray-400' : '';
+                                    if (!loc?.name) return null; // Skip invalid locations
+                                
                                     return (
                                         <TouchableOpacity
+                                            key={loc.id ? `loc-${loc.id}` : `loc-${loc.name}-${index}`} // Ensure unique key
                                             onPress={() => handleLocation(loc)}
-                                            key={index}
-                                            className={`flex-row items-center border-0 p-3 px-4 mb-1 ${borderClass}`}
+                                            className="flex-row items-center border-0 p-3 px-4 mb-1"
                                         >
-                                        <MapPinIcon size="20" color="gray" />
-                                        <Text className="text-black text-lg ml-2">{loc?.name}, {loc?.country}</Text>
+                                            <MapPinIcon size="20" color="gray" />
+                                            <Text className="text-black text-lg ml-2">{loc?.name}, {loc?.country}</Text>
                                         </TouchableOpacity>
-                                    )
+                                    );
                                 })
+                                
+                                
                             }
                         </View>
                     ):null
@@ -159,7 +168,7 @@ export default function HomeScreen() {
                     <View className="flex-row space-x-2 items-center">
                         <Image source={require('../assets/icons/sun.png')} className="h-6 w-6" />
                         <Text className="text-white font-semibold text-base ml-2">
-                            6:09 AM
+                            {weather?.forecast?.forecastday[0]?.astro?.sunrise}
                         </Text>
                     </View>
                 </View>
@@ -178,24 +187,31 @@ export default function HomeScreen() {
                     {
                         weather?.forecast?.forecastday?.map((item, index) => {
                             let date = new Date(item.date);
-                            let options = {weekday: 'long'};
+                            let options = { weekday: 'long' };
                             let dayName = date.toLocaleDateString('en-US', options);
                             return (
                                 <View 
-                                    className="flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4" style={{backgroundColor: theme.bgWhite(0.15)}}>
+                                    key={item.date} // Use the unique date as the key
+                                    className="flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4" 
+                                    style={{ backgroundColor: theme.bgWhite(0.15) }}
+                                >
                                     <Image source={weatherImages[item?.day?.condition?.text]} className="h-11 w-11" />
                                     <Text className="text-white">{dayName}</Text>
                                     <Text className="text-white text-xl font-semibold">
                                         {item?.day?.avgtemp_c}&#176;
                                     </Text>
                                 </View>
-                            )
-                            
+                            );
                         })
+                        
                     }
                 </ScrollView>
             </View>
         </SafeAreaView>
+            )
+        }
+
+        
     </View>
   )
 }
