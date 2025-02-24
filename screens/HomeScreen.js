@@ -108,7 +108,7 @@ export default function HomeScreen() {
                 ) : (
                     <SafeAreaView className="flex flex-1">
                         {/* Search section */}
-                        <View style={{ height: '7%' }} className="mx-4 relative z-50">
+                        <View style={{ height: '7%' }} className="mx-4 relative z-50 top-10">
                             <View className="flex-row justify-end items-center rounded-full"
                                 style={{ backgroundColor: showSearch ? theme.bgWhite(0.2) : theme.bgWhite(0.005) }}>
                                 {
@@ -117,7 +117,7 @@ export default function HomeScreen() {
                                             onChangeText={handleTextDebounce}
                                             placeholder='Search City'
                                             placeholderTextColor={'lightgray'}
-                                            className="pl-6 h-10 pb-2 flex-1 text-base text-white"
+                                            className="pl-6 h-10 pb-2 pt-2 flex-1 text-base text-white"
                                         />
                                     ) : null
                                 }
@@ -133,7 +133,7 @@ export default function HomeScreen() {
                         <View>
                             {
                                 locations.length > 0 && showSearch ? (
-                                    <View className="absolute self-center w-11/12 bg-gray-300 top-2 rounded-3xl" style={{ elevation: 10, zIndex: 50 }}>
+                                    <View className="absolute self-center w-11/12 bg-gray-300 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50 }}>
                                         {
                                             locations.map((loc, index) => {
                                                 if (!loc?.name) return null; // Skip invalid locations
@@ -155,49 +155,71 @@ export default function HomeScreen() {
                             }
                         </View>
                         {/* Forecast section */}
-                        <View className="mx-4 flex justify-around flex-1 mb-2">
-                            {/* location */}
-                            <Text className="text-white text-center text-2xl font-bold">
-                                {location?.name},{' '}
-                                <Text className="text-lg font-semibold text-gray-300">{location?.country}</Text>
-                            </Text>
+                        <View className="mx-6 flex gap-4 justify-end bottom-10 flex-1">
                             {/* weather image */}
-                            <View className="flex-row justify-center">
+                            {/* <View className="flex-row">
                                 <Image
                                     source={weatherImages[current?.condition?.text]}
                                     className="w-52 h-52"
                                 />
-                            </View>
+                            </View> */}
+                            {/* location */}
+                            <Text className="text-white text-2xl font-bold">
+                                {location?.name},{' '}
+                                <Text className="text-lg font-semibold text-gray-300">{location?.country}</Text>
+                            </Text>
+                            
                             {/* degree celsius */}
-                            <View className="space-y-2">
-                                <Text className="text-center font-bold text-white text-6xl ml-5">
-                                    {current?.temp_c}&#176;
+                            <View className="space-y-2 gap-2">
+                                <Text className="font-bold text-white text-8xl">
+                                    {current?.temp_c}<Text className="text-gray-300 font-light text-8xl">&#176;C</Text>
                                 </Text>
-                                <Text className="text-center text-white text-2xl tracking-widest">
+                                <Text className=" text-white text-2xl tracking-widest">
                                     {current?.condition?.text}
                                 </Text>
+                                <Text className=" text-gray-300 text-2xl">
+                                    Feels like <Text className=" text-white font-semibold text-2xl">{current?.feelslike_c}</Text>
+                                    &#176;C
+                                </Text>
                             </View>
+                            </View>
+                            
                             {/* other stats */}
-                            <View className="flex-row justify-between mx-4">
-                                <View className="flex-row space-x-2 items-center">
-                                    <Image source={require('../assets/icons/wind.png')} className="h-6 w-6" />
-                                    <Text className="text-white font-semibold text-base ml-2">
-                                        {current?.wind_kph}kph
-                                    </Text>
-                                </View>
-                                <View className="flex-row space-x-2 items-center">
-                                    <Image source={require('../assets/icons/drop.png')} className="h-6 w-6" />
-                                    <Text className="text-white font-semibold text-base ml-2">
-                                        {current?.humidity}%
-                                    </Text>
-                                </View>
-                                <View className="flex-row space-x-2 items-center">
-                                    <Image source={require('../assets/icons/sun.png')} className="h-6 w-6" />
-                                    <Text className="text-white font-semibold text-base ml-2">
-                                        {weather?.forecast?.forecastday[0]?.astro?.sunrise}
-                                    </Text>
+                            {/* <View className='pb-6'>
+                                <View className="flex-row justify-between mx-20 bottom-4">
+                                    <View className="flex-row space-x-2 items-center">
+                                        <Image source={require('../assets/icons/wind.png')} className="h-6 w-6" />
+                                        <Text className="text-white font-semibold text-base ml-2">
+                                            {current?.wind_kph}kph
+                                        </Text>
+                                    </View>
+                                    <View className="flex-row space-x-2 items-center">
+                                        <Image source={require('../assets/icons/drop.png')} className="h-6 w-6" />
+                                        <Text className="text-white font-semibold text-base ml-2">
+                                            {current?.humidity}%
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
+                            <View className='pb-6'>
+                                <View className="flex-row justify-between mx-20 bottom-4">
+                                    <View className="flex-row space-x-2 items-center">
+                                        <Image source={require('../assets/icons/wind.png')} className="h-6 w-6" />
+                                        <Text className="text-white font-semibold text-base ml-2">
+                                            {current?.wind_kph}kph
+                                        </Text>
+                                    </View>
+                                    <View className="flex-row space-x-2 items-center">
+                                        <Image source={require('../assets/icons/drop.png')} className="h-6 w-6" />
+                                        <Text className="text-white font-semibold text-base ml-2">
+                                            {current?.humidity}%
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View> */}
+                            
+                            <View>
+                            
                         </View>
                         {/* Hourly Forecast Section */}
                         <View className="mb-8 space-y-3">
@@ -221,7 +243,7 @@ export default function HomeScreen() {
                                                 style={{ backgroundColor: theme.bgWhite(0.15) }}
                                             >
                                                 <Text className="text-white">{time}</Text>
-                                                <Image source={weatherImages[hour?.condition?.text]} className="h-11 w-11" />
+                                                <Image source={weatherImages[hour?.condition?.text]} className="h-11 w-11 m-4" />
                                                 <Text className="text-white text-xl font-semibold">
                                                     {hour?.temp_c}&#176;
                                                 </Text>
