@@ -1,4 +1,5 @@
 import { View, Text, Image, TextInput, TouchableOpacity } from 'react-native'
+import { Image as ExpoImage } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useCallback, useEffect, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
@@ -62,14 +63,15 @@ export default function HomeScreen() {
             setLoading(false);
         })
     }
-    const handleTextDebounce = useCallback(debounce(handleSearch, 1000), []);
+    const handleTextDebounce = useCallback(debounce(handleSearch, 500), []);
 
     const {current, location} = weather;
 
     return (
     <View className="flex-1 relative">
         <StatusBar style='light' />
-        <Image blurRadius={70} source={require('../assets/images/bg.png')} className="absolute h-full w-full" />
+        <Image blurRadius={70} source={weatherImages[current?.condition?.text]} style={{}} className="absolute h-full w-full" />
+        <View className="absolute h-full w-full bg-black opacity-50" /> 
 
         {
             loading? (
@@ -139,6 +141,7 @@ export default function HomeScreen() {
                         source={weatherImages[current?.condition?.text]}
                         className="w-52 h-52"
                     />
+                    {/* <ExpoImage source={{ uri: 'https:'+current?.condition?.icon}} style={{width:100, height:100}} /> */}
                 </View>
                 {/* degree celsius */}
                 <View className="space-y-2">
@@ -194,6 +197,7 @@ export default function HomeScreen() {
                                     style={{ backgroundColor: theme.bgWhite(0.15) }}
                                 >
                                     <Image source={weatherImages[item?.day?.condition?.text]} className="h-11 w-11" />
+                                    {/* <ExpoImage source={{ uri: "https://i.imgur.com/0rZzqq6.gif"}} style={{width: 50, height: 50}} /> */}
                                     <Text className="text-white">{dayName}</Text>
                                     <Text className="text-white text-xl font-semibold">
                                         {item?.day?.avgtemp_c}&#176;
