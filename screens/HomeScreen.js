@@ -1,7 +1,6 @@
-import { View, Text, Image, TextInput, TouchableOpacity } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
+import { View, Text, Image, TextInput, TouchableOpacity, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { theme } from '../theme';
 import { debounce } from 'lodash';
@@ -21,6 +20,30 @@ export default function HomeScreen() {
     const [locations, setLocations] = useState([]);
     const [weather, setWeather] = useState({});
     const [loading, setLoading] = useState(true);
+
+    // Animated values
+    const translateX = useRef(new Animated.Value(0)).current;
+    const opacityAnim = useRef(new Animated.Value(0.7)).current;
+
+    useEffect(() => {
+        // Opacity pulsing animation
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacityAnim, {
+                    toValue: 0.5, // Decrease opacity
+                    duration: 3000,
+                    easing: Easing.ease,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(opacityAnim, {
+                    toValue: 0.7, // Increase opacity
+                    duration: 3000,
+                    easing: Easing.ease,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, []);
 
     const handleLocation = (loc) => {
         setLocations([]);
@@ -59,17 +82,14 @@ export default function HomeScreen() {
                 setLoading(false);
             });
         } else {
-            // Get user's current location
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 console.error('Permission to access location was denied');
                 return;
             }
-
             let location = await Location.getCurrentPositionAsync({});
             const { latitude, longitude } = location.coords;
 
-            // Fetch weather data based on latitude and longitude
             fetchWeatherForecast({
                 lat: latitude,
                 lon: longitude,
@@ -90,16 +110,26 @@ export default function HomeScreen() {
             hour: '2-digit',
             minute: '2-digit',
             hour12: true,
-            timeZone: timezone, // Use the timezone from the API response
+            timeZone: timezone,
         });
     };
 
     return (
         <View className="flex-1 relative">
             <StatusBar style='light' />
-            <Image blurRadius={70} source={weatherImages[current?.condition?.text]} style={{}} className="absolute h-full w-full" />
-            <View className="absolute h-full w-full bg-black opacity-70" />
+            
+            {/* Animated Background */}
+            <Animated.Image
+                blurRadius={70}
+                source={weatherImages[current?.condition?.text]}
+                className="absolute h-full w-full"
+            />
 
+            {/* Animated Overlay */}
+            <Animated.View
+                style={{ opacity: opacityAnim }}
+                className="absolute h-full w-full bg-black"
+            />
             {
                 loading ? (
                     <View className="flex-1 flex-row justify-center items-center">
@@ -201,25 +231,6 @@ export default function HomeScreen() {
                                     </View>
                                 </View>
                             </View>
-                            <View className='pb-6'>
-                                <View className="flex-row justify-between mx-20 bottom-4">
-                                    <View className="flex-row space-x-2 items-center">
-                                        <Image source={require('../assets/icons/wind.png')} className="h-6 w-6" />
-                                        <Text className="text-white font-semibold text-base ml-2">
-                                            {current?.wind_kph}kph
-                                        </Text>
-                                    </View>
-                                    <View className="flex-row space-x-2 items-center">
-                                        <Image source={require('../assets/icons/drop.png')} className="h-6 w-6" />
-                                        <Text className="text-white font-semibold text-base ml-2">
-                                            {current?.humidity}%
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View> */}
-                            
-                            <View>
-                            
                         </View>
                         {/* Hourly Forecast Section */}
                         <View className="mb-8 space-y-3">
