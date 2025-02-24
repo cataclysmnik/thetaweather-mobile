@@ -85,6 +85,14 @@ export default function HomeScreen() {
     const handleTextDebounce = useCallback(debounce(handleSearch, 500), []);
 
     const { current, location } = weather;
+    const formatLocalTime = (timeEpoch, timezone) => {
+        return new Date(timeEpoch * 1000).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: timezone, // Use the timezone from the API response
+        });
+    };
 
     return (
         <View className="flex-1 relative">
@@ -204,11 +212,7 @@ export default function HomeScreen() {
                             >
                                 {
                                     weather?.forecast?.forecastday[0]?.hour?.map((hour, index) => {
-                                        const time = new Date(hour.time_epoch * 1000).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            hour12: true,
-                                        });
+                                        const time = formatLocalTime(hour.time_epoch, location?.tz_id); // Use local timezone
 
                                         return (
                                             <View

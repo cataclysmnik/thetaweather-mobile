@@ -20,6 +20,7 @@ export const weatherImages = {
     'Overcast ': require('../assets/images/cloudy.png'),
     'Cloudy ': require('../assets/images/cloudy.png'),
     'Light rain': require('../assets/images/lightrain.png'),
+    'Light rain shower': require('../assets/images/lightrain.png'),
     'Light drizzle': require('../assets/images/lightrain.png'),
     'Light freezing rain': require('../assets/images/freezingrain.png'),
     'Moderate rain at times': require('../assets/images/moderaterain.png'),
