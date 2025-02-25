@@ -1,4 +1,4 @@
-import { View, Text, Image, TextInput, TouchableOpacity, Animated, Easing } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, Animated, ScrollView, Dimensions, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
@@ -7,13 +7,14 @@ import { debounce } from 'lodash';
 
 import { CalendarDaysIcon, MagnifyingGlassIcon } from 'react-native-heroicons/outline';
 import { MapPinIcon } from 'react-native-heroicons/solid';
-import { ScrollView } from 'react-native';
 import { fetchLocations, fetchWeatherForecast } from '../api/weather';
 import { weatherImages } from '../constants';
 
 import * as Progress from 'react-native-progress';
 import { getData, storeData } from '../utils/asyncStorage';
 import * as Location from 'expo-location';
+
+const { width } = Dimensions.get('window'); // Get screen width for horizontal paging
 
 export default function HomeScreen() {
     const [showSearch, toggleSearch] = useState(false);
@@ -30,13 +31,13 @@ export default function HomeScreen() {
         Animated.loop(
             Animated.sequence([
                 Animated.timing(opacityAnim, {
-                    toValue: 0.5, // Decrease opacity
+                    toValue: 0.6,
                     duration: 3000,
                     easing: Easing.ease,
                     useNativeDriver: true,
                 }),
                 Animated.timing(opacityAnim, {
-                    toValue: 0.7, // Increase opacity
+                    toValue: 0.7,
                     duration: 3000,
                     easing: Easing.ease,
                     useNativeDriver: true,
@@ -104,7 +105,8 @@ export default function HomeScreen() {
 
     const handleTextDebounce = useCallback(debounce(handleSearch, 500), []);
 
-    const { current, location } = weather;
+    const { current, location, forecast } = weather;
+
     const formatLocalTime = (timeEpoch, timezone) => {
         return new Date(timeEpoch * 1000).toLocaleTimeString([], {
             hour: '2-digit',
@@ -130,143 +132,193 @@ export default function HomeScreen() {
                 style={{ opacity: opacityAnim }}
                 className="absolute h-full w-full bg-black"
             />
-            {
+            
+            {   
                 loading ? (
                     <View className="flex-1 flex-row justify-center items-center">
                         <Progress.CircleSnail thickness={10} size={140} color="#cccccc" />
                     </View>
                 ) : (
                     <SafeAreaView className="flex flex-1">
-                        {/* Search section */}
-                        <View style={{ height: '7%' }} className="mx-4 relative z-50 top-10">
-                            <View className="flex-row justify-end items-center rounded-full"
-                                style={{ backgroundColor: showSearch ? theme.bgWhite(0.2) : theme.bgWhite(0.005) }}>
-                                {
-                                    showSearch ? (
-                                        <TextInput
-                                            onChangeText={handleTextDebounce}
-                                            placeholder='Search City'
-                                            placeholderTextColor={'lightgray'}
-                                            className="pl-6 h-10 pb-2 pt-2 flex-1 text-base text-white"
-                                        />
-                                    ) : null
-                                }
-                                <TouchableOpacity
-                                    onPress={() => toggleSearch(!showSearch)}
-                                    style={{ backgroundColor: theme.bgWhite(0.3) }}
-                                    className="rounded-full p-3 m-1"
-                                >
-                                    <MagnifyingGlassIcon size="25" color="white" />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                        <View>
-                            {
-                                locations.length > 0 && showSearch ? (
-                                    <View className="absolute self-center w-11/12 bg-gray-300 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50 }}>
+                        {/* Horizontal ScrollView for Home and Details Screens */}
+                        <ScrollView
+                            horizontal
+                            pagingEnabled
+                            showsHorizontalScrollIndicator={false}
+                        >
+                            {/* Home Screen */}
+                            <View style={{ width }} className="flex-1">
+                                {/* Search section */}
+                                <View style={{ height: '7%' }} className="mx-4 relative z-50 top-10">
+                                    <View className="flex-row justify-end items-center rounded-full"
+                                        style={{ backgroundColor: showSearch ? theme.bgWhite(0.2) : theme.bgWhite(0.005) }}>
                                         {
-                                            locations.map((loc, index) => {
-                                                if (!loc?.name) return null; // Skip invalid locations
-
-                                                return (
-                                                    <TouchableOpacity
-                                                        key={loc.id ? `loc-${loc.id}` : `loc-${loc.name}-${index}`} // Ensure unique key
-                                                        onPress={() => handleLocation(loc)}
-                                                        className="flex-row items-center border-0 p-3 px-4 mb-1"
-                                                    >
-                                                        <MapPinIcon size="20" color="gray" />
-                                                        <Text className="text-black text-lg ml-2">{loc?.name}, {loc?.country}</Text>
-                                                    </TouchableOpacity>
-                                                );
-                                            })
+                                            showSearch ? (
+                                                <TextInput
+                                                    onChangeText={handleTextDebounce}
+                                                    placeholder='Search City'
+                                                    placeholderTextColor={'lightgray'}
+                                                    className="pl-6 h-10 pb-2 pt-2 flex-1 text-base text-white"
+                                                />
+                                            ) : null
                                         }
+                                        <TouchableOpacity
+                                            onPress={() => toggleSearch(!showSearch)}
+                                            style={{ backgroundColor: theme.bgWhite(0.3) }}
+                                            className="rounded-full p-3 m-1"
+                                        >
+                                            <MagnifyingGlassIcon size="25" color="white" />
+                                        </TouchableOpacity>
                                     </View>
-                                ) : null
-                            }
-                        </View>
-                        {/* Forecast section */}
-                        <View className="mx-6 flex gap-4 justify-end bottom-10 flex-1">
-                            {/* weather image */}
-                            {/* <View className="flex-row">
-                                <Image
-                                    source={weatherImages[current?.condition?.text]}
-                                    className="w-52 h-52"
-                                />
-                            </View> */}
-                            {/* location */}
-                            <Text className="text-white text-2xl font-bold">
-                                {location?.name},{' '}
-                                <Text className="text-lg font-semibold text-gray-300">{location?.country}</Text>
-                            </Text>
-                            
-                            {/* degree celsius */}
-                            <View className="space-y-2 gap-2">
-                                <Text className="font-bold text-white text-8xl">
-                                    {current?.temp_c}<Text className="text-gray-300 font-light text-8xl">&#176;C</Text>
-                                </Text>
-                                <Text className=" text-white text-2xl tracking-widest">
-                                    {current?.condition?.text}
-                                </Text>
-                                <Text className=" text-gray-300 text-2xl">
-                                    Feels like <Text className=" text-white font-semibold text-2xl">{current?.feelslike_c}</Text>
-                                    &#176;C
-                                </Text>
-                            </View>
-                            </View>
-                            
-                            {/* other stats */}
-                            {/* <View className='pb-6'>
-                                <View className="flex-row justify-between mx-20 bottom-4">
-                                    <View className="flex-row space-x-2 items-center">
-                                        <Image source={require('../assets/icons/wind.png')} className="h-6 w-6" />
-                                        <Text className="text-white font-semibold text-base ml-2">
-                                            {current?.wind_kph}kph
+                                </View>
+                                <View>
+                                    {
+                                        locations.length > 0 && showSearch ? (
+                                            <View className="absolute self-center w-11/12 bg-gray-300 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50 }}>
+                                                {
+                                                    locations.map((loc, index) => {
+                                                        if (!loc?.name) return null;
+
+                                                        return (
+                                                            <TouchableOpacity
+                                                                key={loc.id ? `loc-${loc.id}` : `loc-${loc.name}-${index}`}
+                                                                onPress={() => handleLocation(loc)}
+                                                                className="flex-row items-center border-0 p-3 px-4 mb-1"
+                                                            >
+                                                                <MapPinIcon size="20" color="gray" />
+                                                                <Text className="text-black text-lg ml-2">{loc?.name}, {loc?.country}</Text>
+                                                            </TouchableOpacity>
+                                                        );
+                                                    })
+                                                }
+                                            </View>
+                                        ) : null
+                                    }
+                                </View>
+                                {/* Forecast section */}
+                                <View className="mx-6 flex gap-4 justify-end bottom-48 flex-1">
+                                    <Text className="text-white text-2xl font-bold">
+                                        {location?.name},{' '}
+                                        <Text className="text-lg font-semibold text-gray-300">{location?.country}</Text>
+                                    </Text>
+                                    <View className="space-y-2 gap-2">
+                                        <Text className="font-bold text-white text-8xl">
+                                            {current?.temp_c}<Text className="text-gray-300 font-light text-8xl">&#176;C</Text>
                                         </Text>
-                                    </View>
-                                    <View className="flex-row space-x-2 items-center">
-                                        <Image source={require('../assets/icons/drop.png')} className="h-6 w-6" />
-                                        <Text className="text-white font-semibold text-base ml-2">
-                                            {current?.humidity}%
+                                        <Text className="text-white text-2xl tracking-widest">
+                                            {current?.condition?.text}
+                                        </Text>
+                                        <Text className="text-gray-300 text-2xl">
+                                            Feels like <Text className="text-white font-semibold text-2xl">{current?.feelslike_c}</Text>
+                                            &#176;C
                                         </Text>
                                     </View>
                                 </View>
                             </View>
-                        </View>
-                        {/* Hourly Forecast Section */}
-                        <View className="mb-8 space-y-3">
-                            <View className="flex-row items-center mx-5 space-x-2 mb-4">
-                                <CalendarDaysIcon size="22" color="white" />
-                                <Text className="text-white text-base ml-2">Hourly Forecast</Text>
-                            </View>
-                            <ScrollView
-                                horizontal
-                                contentContainerStyle={{ paddingHorizontal: 15 }}
-                                showsHorizontalScrollIndicator={false}
-                            >
-                                {
-                                    weather?.forecast?.forecastday[0]?.hour?.map((hour, index) => {
-                                        const time = formatLocalTime(hour.time_epoch, location?.tz_id); // Use local timezone
 
-                                        return (
-                                            <View
-                                                key={hour.time_epoch} // Use the unique time_epoch as the key
-                                                className="flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4"
-                                                style={{ backgroundColor: theme.bgWhite(0.15) }}
-                                            >
-                                                <Text className="text-white">{time}</Text>
-                                                <Image source={weatherImages[hour?.condition?.text]} className="h-11 w-11 m-4" />
-                                                <Text className="text-white text-xl font-semibold">
-                                                    {hour?.temp_c}&#176;
-                                                </Text>
-                                            </View>
-                                        );
-                                    })
-                                }
-                            </ScrollView>
-                        </View>
+                            {/* Details Screen */}
+                            <View style={{ width }} className="flex-1 p-4">
+                                <Text className="text-white text-2xl font-bold mb-4">Weather Details</Text>
+                                
+                                {/* Weather Details Cards */}
+                                <View className="flex-row flex-wrap justify-between">
+                                    {/* Humidity */}
+                                    <View className="w-[48%] bg-white/10 rounded-lg p-4 mb-4">
+                                        <Text className="text-white text-lg">Humidity</Text>
+                                        <Text className="text-white text-2xl font-bold">{current?.humidity}%</Text>
+                                    </View>
+                                    {/* UV Index */}
+                                    <View className="w-[48%] bg-white/10 rounded-lg p-4 mb-4">
+                                        <Text className="text-white text-lg">UV Index</Text>
+                                        <Text className="text-white text-2xl font-bold">{current?.uv}</Text>
+                                    </View>
+                                    {/* Precipitation */}
+                                    <View className="w-[48%] bg-white/10 rounded-lg p-4 mb-4">
+                                        <Text className="text-white text-lg">Precipitation</Text>
+                                        <Text className="text-white text-2xl font-bold">{current?.precip_mm}mm</Text>
+                                    </View>
+                                    {/* Sunrise & Sunset */}
+                                    <View className="w-[48%] bg-white/10 rounded-lg p-4 mb-4">
+                                        <Text className="text-white text-lg">Sunrise</Text>
+                                        <Text className="text-white text-2xl font-bold">{forecast?.forecastday[0]?.astro?.sunrise}</Text>
+                                        <Text className="text-white text-lg mt-2">Sunset</Text>
+                                        <Text className="text-white text-2xl font-bold">{forecast?.forecastday[0]?.astro?.sunset}</Text>
+                                    </View>
+                                </View>
+                                <View className="mb-8 space-y-3">
+                                    <View className="flex-row items-center mx-5 space-x-2 mb-4">
+                                        <CalendarDaysIcon size="22" color="white" />
+                                        <Text className="text-white text-base ml-2">Hourly Forecast</Text>
+                                    </View>
+                                    <ScrollView
+                                        horizontal
+                                        contentContainerStyle={{ paddingHorizontal: 15 }}
+                                        showsHorizontalScrollIndicator={false}
+                                        nestedScrollEnabled={true}
+                                    >
+                                        {
+                                            weather?.forecast?.forecastday[0]?.hour?.map((hour, index) => {
+                                                const time = formatLocalTime(hour.time_epoch, location?.tz_id); // Use local timezone
+
+                                                return (
+                                                    <View
+                                                        key={hour.time_epoch} // Use the unique time_epoch as the key
+                                                        className="flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4"
+                                                        style={{ backgroundColor: theme.bgWhite(0.15) }}
+                                                    >
+                                                        <Text className="text-white">{time}</Text>
+                                                        <Image source={weatherImages[hour?.condition?.text]} className="h-11 w-11 m-4" />
+                                                        <Text className="text-white text-xl font-semibold">
+                                                            {hour?.temp_c}&#176;
+                                                        </Text>
+                                                    </View>
+                                                );
+                                            })
+                                        }
+                                    </ScrollView>
+                                </View>
+                                {/* Hourly Precipitation Forecast */}
+                                <View className="flex-row items-center mx-5 space-x-2 mb-4">
+                                        <CalendarDaysIcon size="22" color="white" />
+                                        <Text className="text-white text-base ml-2">Hourly Forecast</Text>
+                                    </View>
+                                <ScrollView
+                                    horizontal
+                                    contentContainerStyle={{ paddingHorizontal: 15 }}
+                                    showsHorizontalScrollIndicator={false}
+                                    nestedScrollEnabled={true} // Enable nested scrolling
+                                    style={{ height: 120 }} // Fixed height for inner ScrollView
+                                >
+                                    {
+                                        forecast?.forecastday[0]?.hour?.map((hour, index) => {
+                                            const time = formatLocalTime(hour.time_epoch, location?.tz_id);
+                                            return (
+                                                <View
+                                                    key={hour.time_epoch}
+                                                    className="flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4"
+                                                    style={{ backgroundColor: theme.bgWhite(0.15) }}
+                                                >
+                                                    <Text className="text-white">{time}</Text>
+                                                    <Text className="text-white text-xl font-semibold">
+                                                        {hour?.precip_mm}mm
+                                                    </Text>
+                                                </View>
+                                            );
+                                        })
+                                    }
+                                </ScrollView>
+                            </View>
+                        </ScrollView>
                     </SafeAreaView>
                 )
             }
         </View>
     );
 }
+
+
+
+
+
+
+                        
