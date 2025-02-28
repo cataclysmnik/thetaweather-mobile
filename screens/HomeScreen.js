@@ -13,6 +13,7 @@ import { weatherImages } from '../constants';
 import * as Progress from 'react-native-progress';
 import { getData, storeData } from '../utils/asyncStorage';
 import * as Location from 'expo-location';
+import { BlurView } from 'expo-blur';
 
 const { width } = Dimensions.get('window'); // Get screen width for horizontal paging
 
@@ -213,7 +214,7 @@ export default function HomeScreen() {
                                         <Text className="text-white text-2xl font-bold">{current?.humidity}%</Text>
                                     </View>
                                     {/* UV Index */}
-                                    <View className="w-[48%] bg-white/10 rounded-lg p-4 mb-4">
+                                    <View className="w-[48%] bg-white/10 rounded-lg p-4 mb-4"> 
                                         <Text className="text-white text-lg">UV Index</Text>
                                         <Text className="text-white text-2xl font-bold">{current?.uv}</Text>
                                     </View>
@@ -324,10 +325,3 @@ export default function HomeScreen() {
         </View>
     );
 }
-
-
-
-
-
-
-                        
