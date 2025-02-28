@@ -19,7 +19,7 @@ const { width } = Dimensions.get('window'); // Get screen width for horizontal p
 export default function HomeScreen() {
     const [showSearch, toggleSearch] = useState(false);
     const [locations, setLocations] = useState([]);
-    const [weather, setWeather] = useState({});
+    const [weather, setWeather] = useState({ current: {}, location: {}, forecast: {} });
     const [loading, setLoading] = useState(true);
 
     // Animated values
@@ -74,34 +74,17 @@ export default function HomeScreen() {
 
     const fetchMyWeatherData = async () => {
         let myCity = await getData('city');
-        if (myCity) {
-            fetchWeatherForecast({
-                cityName: myCity,
-                days: '7'
-            }).then(data => {
-                setWeather(data);
-                setLoading(false);
-            });
-        } else {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                console.error('Permission to access location was denied');
-                return;
-            }
-            let location = await Location.getCurrentPositionAsync({});
-            const { latitude, longitude } = location.coords;
-
-            fetchWeatherForecast({
-                lat: latitude,
-                lon: longitude,
-                days: '7'
-            }).then(data => {
-                setWeather(data);
-                setLoading(false);
-                storeData('city', data.location.name);
-            });
-        }
-    };
+        // Add location to here
+        let cityName = 'Chennai';
+        if(myCity) cityName = myCity; 
+        fetchWeatherForecast({
+            cityName,
+            days: '7'
+        }).then(data => {
+            setWeather(data);
+            setLoading(false);
+        })
+    }
 
     const handleTextDebounce = useCallback(debounce(handleSearch, 500), []);
 
@@ -121,11 +104,13 @@ export default function HomeScreen() {
             <StatusBar style='light' />
             
             {/* Animated Background */}
-            <Animated.Image
-                blurRadius={70}
-                source={weatherImages[current?.condition?.text]}
-                className="absolute h-full w-full"
-            />
+            {weather.current && (
+                <Animated.Image
+                    blurRadius={70}
+                    source={weatherImages[weather.current.condition?.text]}
+                    className="absolute h-full w-full"
+                />
+            )}
 
             {/* Animated Overlay */}
             <Animated.View
@@ -196,7 +181,7 @@ export default function HomeScreen() {
                                     }
                                 </View>
                                 {/* Forecast section */}
-                                <View className="mx-6 flex gap-4 justify-end bottom-48 flex-1">
+                                <View className="mx-6 flex gap-4 justify-center flex-1">
                                     <Text className="text-white text-2xl font-bold">
                                         {location?.name},{' '}
                                         <Text className="text-lg font-semibold text-gray-300">{location?.country}</Text>
@@ -217,11 +202,11 @@ export default function HomeScreen() {
                             </View>
 
                             {/* Details Screen */}
-                            <View style={{ width }} className="flex-1 p-4">
-                                <Text className="text-white text-2xl font-bold mb-4">Weather Details</Text>
+                            <View style={{ width }} className="flex-1 justify-center">
+                                <Text className="text-white text-2xl font-bold px-4 my-2">Weather Details</Text>
                                 
                                 {/* Weather Details Cards */}
-                                <View className="flex-row flex-wrap justify-between">
+                                <View className="flex-row flex-wrap px-4 justify-between">
                                     {/* Humidity */}
                                     <View className="w-[48%] bg-white/10 rounded-lg p-4 mb-4">
                                         <Text className="text-white text-lg">Humidity</Text>
@@ -237,22 +222,41 @@ export default function HomeScreen() {
                                         <Text className="text-white text-lg">Precipitation</Text>
                                         <Text className="text-white text-2xl font-bold">{current?.precip_mm}mm</Text>
                                     </View>
-                                    {/* Sunrise & Sunset */}
                                     <View className="w-[48%] bg-white/10 rounded-lg p-4 mb-4">
-                                        <Text className="text-white text-lg">Sunrise</Text>
-                                        <Text className="text-white text-2xl font-bold">{forecast?.forecastday[0]?.astro?.sunrise}</Text>
-                                        <Text className="text-white text-lg mt-2">Sunset</Text>
-                                        <Text className="text-white text-2xl font-bold">{forecast?.forecastday[0]?.astro?.sunset}</Text>
+                                        <Text className="text-white text-lg">Air Quality Index</Text>
+                                        <Text className="text-white text-2xl font-bold">{current?.air_quality?.["us-epa-index"]}</Text>
                                     </View>
+                                    <View className="w-[48%] rounded-lg">
+                                        <View className="bg-white/10 rounded-lg p-4 mb-4">
+                                            <Text className="text-white text-lg">Wind Speed</Text>
+                                            <Text className="text-white text-2xl font-bold">{current?.wind_kph} km/h</Text>
+                                        </View>
+                                        <View className=" bg-white/10 rounded-lg p-4 mb-4">
+                                            <Text className="text-white text-lg mt-2">Visibility</Text>
+                                            <Text className="text-white text-2xl font-bold">{current?.vis_km} km</Text>
+                                        </View>
+                                        
+                                    </View>
+                                    
+                                    {/* Sunrise & Sunset */}
+                                    <View className="w-[48%] bg-white/10 rounded-lg py-3 px-4 mb-4">
+                                        <Text className="text-white text-lg">Sunrise</Text>
+                                        <Text className="text-white text-xl font-bold">{forecast?.forecastday[0]?.astro?.sunrise}</Text>
+                                        <Text className="text-white text-lg mt-2">Sunset</Text>
+                                        <Text className="text-white text-xl font-bold">{forecast?.forecastday[0]?.astro?.sunset}</Text>
+                                        <Text className="text-white text-lg mt-2">Moonphase</Text>
+                                        <Text className="text-white text-xl font-bold">{forecast?.forecastday?.[0]?.astro?.moon_phase}</Text>
+                                    </View>
+                                    
                                 </View>
                                 <View className="mb-8 space-y-3">
-                                    <View className="flex-row items-center mx-5 space-x-2 mb-4">
+                                    <View className="flex-row items-center mx-4 space-x-2 mb-4">
                                         <CalendarDaysIcon size="22" color="white" />
                                         <Text className="text-white text-base ml-2">Hourly Forecast</Text>
                                     </View>
                                     <ScrollView
                                         horizontal
-                                        contentContainerStyle={{ paddingHorizontal: 15 }}
+                                        contentContainerStyle={{ paddingLeft: 16, paddingRight: 0 }} // Initial left margin
                                         showsHorizontalScrollIndicator={false}
                                         nestedScrollEnabled={true}
                                     >
@@ -277,36 +281,41 @@ export default function HomeScreen() {
                                         }
                                     </ScrollView>
                                 </View>
-                                {/* Hourly Precipitation Forecast */}
-                                <View className="flex-row items-center mx-5 space-x-2 mb-4">
-                                        <CalendarDaysIcon size="22" color="white" />
-                                        <Text className="text-white text-base ml-2">Hourly Forecast</Text>
-                                    </View>
+                                {/* Daily Precipitation Forecast */}
+                                <View className="mb-8 space-y-3">
+                                <View className="flex-row items-center mx-4 space-x-2 mb-4">
+                                    <CalendarDaysIcon size="22" color="white" />
+                                    <Text className="text-white text-base ml-2">Daily Forecast</Text>
+                                </View>
                                 <ScrollView
                                     horizontal
-                                    contentContainerStyle={{ paddingHorizontal: 15 }}
+                                    contentContainerStyle={{paddingHorizontal: 15}}
                                     showsHorizontalScrollIndicator={false}
-                                    nestedScrollEnabled={true} // Enable nested scrolling
-                                    style={{ height: 120 }} // Fixed height for inner ScrollView
+                                    nestedScrollEnabled={true}
                                 >
                                     {
-                                        forecast?.forecastday[0]?.hour?.map((hour, index) => {
-                                            const time = formatLocalTime(hour.time_epoch, location?.tz_id);
+                                        weather?.forecast?.forecastday?.map((item, index) => {
+                                            let date = new Date(item.date);
+                                            let options = { weekday: 'long' };
+                                            let dayName = date.toLocaleDateString('en-US', options);
                                             return (
-                                                <View
-                                                    key={hour.time_epoch}
-                                                    className="flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4"
+                                                <View 
+                                                    key={item.date} // Use the unique date as the key
+                                                    className="flex justify-center items-center w-36 rounded-3xl py-3 space-y-1 mr-4" 
                                                     style={{ backgroundColor: theme.bgWhite(0.15) }}
                                                 >
-                                                    <Text className="text-white">{time}</Text>
+                                                    <Image source={weatherImages[item?.day?.condition?.text]} className="h-11 w-11" />
+                                                    <Text className="text-white">{dayName}</Text>
                                                     <Text className="text-white text-xl font-semibold">
-                                                        {hour?.precip_mm}mm
+                                                        {item?.day?.avgtemp_c}&#176;
                                                     </Text>
                                                 </View>
                                             );
                                         })
+                                        
                                     }
                                 </ScrollView>
+                            </View>
                             </View>
                         </ScrollView>
                     </SafeAreaView>
