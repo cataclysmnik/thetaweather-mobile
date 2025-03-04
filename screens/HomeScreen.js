@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { theme } from '../theme';
 import { debounce } from 'lodash';
-import { BlurView } from 'expo-blur';
 
 import { CalendarDaysIcon, MagnifyingGlassIcon } from 'react-native-heroicons/outline';
 import { MapPinIcon } from 'react-native-heroicons/solid';
@@ -13,7 +12,6 @@ import { weatherImages } from '../constants';
 
 import * as Progress from 'react-native-progress';
 import { getData, storeData } from '../utils/asyncStorage';
-import * as Location from 'expo-location';
 
 const { width } = Dimensions.get('window'); // Get screen width for horizontal paging
 
@@ -109,8 +107,8 @@ export default function HomeScreen() {
     // Interpolate blur radius based on scroll position
     const interpolatedBlurRadius = translateX.interpolate({
         inputRange: [0, width],
-        outputRange: [0, 70], // Adjust blur intensity here
-        extrapolate: 'clamp',
+        outputRange: [70, 70], // Adjust blur intensity here
+        // extrapolate: 'clamp',
     });
 
     return (
@@ -190,20 +188,20 @@ export default function HomeScreen() {
                             </View>
                             {/* Forecast section */}
                             <View className="mx-6 flex gap-4 justify-center flex-1">
-                                <Text className="text-white text-2xl font-bold">
+                                <Text className="text-center text-white text-2xl font-bold">
                                     {location?.name},{' '}
                                     <Text className="text-lg font-semibold text-gray-300">{location?.country}</Text>
                                 </Text>
                                 <View className="space-y-2 gap-2">
-                                    <Text className="font-bold text-white text-8xl">
+                                    <Text className="text-center font-bold text-white text-8xl">
                                         {current?.temp_c}<Text className="text-gray-300 font-light text-8xl">&#176;C</Text>
                                     </Text>
-                                    <Text className="text-white text-2xl tracking-widest">
-                                        {current?.condition?.text}
-                                    </Text>
-                                    <Text className="text-gray-300 text-2xl">
+                                    <Text className="text-center text-gray-300 text-2xl">
                                         Feels like <Text className="text-white font-semibold text-2xl">{current?.feelslike_c}</Text>
                                         &#176;C
+                                    </Text>
+                                    <Text className="text-center text-white text-2xl tracking-widest">
+                                        {current?.condition?.text}
                                     </Text>
                                 </View>
                             </View>
