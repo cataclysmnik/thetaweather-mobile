@@ -152,24 +152,19 @@ export default function HomeScreen() {
                                     style={{ backgroundColor: showSearch ? theme.bgWhite(0.2) : theme.bgWhite(0.005) }}>
                                     {showSearch ? (
                                         <TextInput
+                                            autoFocus={true}
                                             onChangeText={handleTextDebounce}
                                             placeholder='Search City'
                                             placeholderTextColor={'lightgray'}
-                                            className="pl-6 h-10 pb-2 pt-2 flex-1 text-base text-white"
+                                            className="pl-6 h-14 pb-2 p-4 pt-2 flex-1 text-base text-white"
                                         />
                                     ) : null}
-                                    <TouchableOpacity
-                                        onPress={() => toggleSearch(!showSearch)}
-                                        style={{ backgroundColor: theme.bgWhite(0.3) }}
-                                        className="rounded-full p-3 m-1"
-                                    >
-                                        <MagnifyingGlassIcon size="25" color="white" />
-                                    </TouchableOpacity>
+                                    
                                 </View>
                             </View>
                             <View>
                                 {locations.length > 0 && showSearch ? (
-                                    <View className="absolute self-center w-11/12 bg-gray-300 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50 }}>
+                                    <View className="absolute self-center w-11/12 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(.9)}}>
                                         {locations.map((loc, index) => {
                                             if (!loc?.name) return null;
                                             return (
@@ -194,7 +189,7 @@ export default function HomeScreen() {
                                 </Text>
                                 <View className="space-y-2 gap-2">
                                     <Text className="text-center font-bold text-white text-8xl">
-                                        {current?.temp_c}<Text className="text-gray-300 font-light text-8xl">&#176;C</Text>
+                                        {current?.temp_c}<Text className="text-gray-300 font-light text-8xl">&#176;</Text>
                                     </Text>
                                     <Text className="text-center text-gray-300 text-2xl">
                                         Feels like <Text className="text-white font-semibold text-2xl">{current?.feelslike_c}</Text>
@@ -204,6 +199,16 @@ export default function HomeScreen() {
                                         {current?.condition?.text}
                                     </Text>
                                 </View>
+                                <View className='items-center mt-10'>
+                                    <TouchableOpacity 
+                                        onPress={() => toggleSearch(!showSearch)}
+                                        style={{ backgroundColor: theme.bgWhite(0.3) }}
+                                        className="rounded-full p-3"
+                                    >
+                                        <MagnifyingGlassIcon size="25" color="white" />
+                                    </TouchableOpacity>
+                                </View>
+                                
                             </View>
                         </View>
 
