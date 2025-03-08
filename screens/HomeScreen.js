@@ -1,4 +1,4 @@
-import { View, Text, Image, TextInput, TouchableOpacity, Animated, ScrollView, Dimensions, Easing } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, Animated, ScrollView, Dimensions, ActivityIndicator, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
@@ -20,31 +20,57 @@ export default function HomeScreen() {
     const [locations, setLocations] = useState([]);
     const [weather, setWeather] = useState({ current: {}, location: {}, forecast: {} });
     const [loading, setLoading] = useState(true);
+    const [searching, setSearching] = useState(false); // Track search loading state
+
+    // Ref for TextInput
+    const searchInputRef = useRef(null);
 
     // Animated values
     const translateX = useRef(new Animated.Value(0)).current;
-    const opacityAnim = useRef(new Animated.Value(0.7)).current;
     const blurRadius = useRef(new Animated.Value(0)).current; // For dynamic blur effect
+    const searchBarOpacity = useRef(new Animated.Value(0)).current; // For search bar opacity
+    const searchBarScaleY = useRef(new Animated.Value(0)).current; // For search bar scaleY animation
 
     useEffect(() => {
-        // Opacity pulsing animation
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(opacityAnim, {
-                    toValue: 0.6,
-                    duration: 3000,
-                    easing: Easing.ease,
+        // Animate search bar when showSearch changes
+        if (showSearch) {
+            Animated.parallel([
+                Animated.timing(searchBarOpacity, {
+                    toValue: 1,
+                    duration: 300,
                     useNativeDriver: true,
                 }),
-                Animated.timing(opacityAnim, {
-                    toValue: 0.7,
-                    duration: 3000,
-                    easing: Easing.ease,
+                Animated.spring(searchBarScaleY, {
+                    toValue: 1,
+                    speed: 10,
+                    bounciness: 10,
                     useNativeDriver: true,
                 }),
-            ])
-        ).start();
-    }, []);
+            ]).start(() => {
+                // Focus the TextInput after the animation completes
+                if (searchInputRef.current) {
+                    searchInputRef.current.focus();
+                }
+            });
+        } else {
+            Animated.parallel([
+                Animated.timing(searchBarOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(searchBarScaleY, {
+                    toValue: 0,
+                    speed: 10,
+                    bounciness: 10,
+                    useNativeDriver: true,
+                }),
+            ]).start(() => {
+                // Dismiss the keyboard when search is toggled off
+                Keyboard.dismiss();
+            });
+        }
+    }, [showSearch]);
 
     const handleLocation = (loc) => {
         setLocations([]);
@@ -62,9 +88,14 @@ export default function HomeScreen() {
 
     const handleSearch = value => {
         if (value.length > 2) {
+            setSearching(true); // Show spinner when searching
             fetchLocations({ cityName: value }).then(data => {
                 setLocations(data);
+                setSearching(false); // Hide spinner when search is complete
             });
+        } else {
+            setLocations([]);
+            setSearching(false); // Hide spinner if search query is too short
         }
     };
 
@@ -98,7 +129,7 @@ export default function HomeScreen() {
         });
     };
 
-    // Handle scroll to update blur radius
+    // Handle scroll to update blur radius and opacity
     const handleScroll = Animated.event(
         [{ nativeEvent: { contentOffset: { x: translateX } } }],
         { useNativeDriver: false }
@@ -108,7 +139,12 @@ export default function HomeScreen() {
     const interpolatedBlurRadius = translateX.interpolate({
         inputRange: [0, width],
         outputRange: [70, 70], // Adjust blur intensity here
-        // extrapolate: 'clamp',
+    });
+
+    // Interpolate opacity based on scroll position
+    const interpolatedOpacity = translateX.interpolate({
+        inputRange: [0, width],
+        outputRange: [0.7, 0.9], // Adjust opacity range here
     });
 
     return (
@@ -126,7 +162,7 @@ export default function HomeScreen() {
 
             {/* Animated Overlay */}
             <Animated.View
-                style={{ opacity: opacityAnim }}
+                style={{ opacity: interpolatedOpacity }} // Dynamic opacity
                 className="absolute h-full w-full bg-black"
             />
 
@@ -147,21 +183,27 @@ export default function HomeScreen() {
                         {/* Home Screen */}
                         <View style={{ width }} className="flex-1">
                             {/* Search section */}
-                            <View style={{ height: '7%' }} className="mx-4 relative z-50 top-10">
+                            <Animated.View
+                                style={{
+                                    opacity: searchBarOpacity,
+                                    transform: [{ scaleY: searchBarScaleY }],
+                                }}
+                                className="mx-4 relative z-50 top-10"
+                            >
                                 <View className="flex-row justify-end items-center rounded-full"
-                                    style={{ backgroundColor: showSearch ? theme.bgWhite(0.2) : theme.bgWhite(0.005) }}>
-                                    {showSearch ? (
-                                        <TextInput
-                                            autoFocus={true}
-                                            onChangeText={handleTextDebounce}
-                                            placeholder='Search City'
-                                            placeholderTextColor={'lightgray'}
-                                            className="pl-6 h-14 pb-2 p-4 pt-2 flex-1 text-base text-white"
-                                        />
+                                    style={{ backgroundColor: theme.bgWhite(0.2) }}>
+                                    <TextInput
+                                        ref={searchInputRef} // Ref for TextInput
+                                        onChangeText={handleTextDebounce}
+                                        placeholder='Search City'
+                                        placeholderTextColor={'lightgray'}
+                                        className="pl-6 h-14 pb-2 p-4 pt-2 flex-1 text-base text-white"
+                                    />
+                                    {searching ? (
+                                        <ActivityIndicator size="small" color="white" className="mr-4" />
                                     ) : null}
-                                    
                                 </View>
-                            </View>
+                            </Animated.View>
                             <View>
                                 {locations.length > 0 && showSearch ? (
                                     <View className="absolute self-center w-11/12 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(.9)}}>
@@ -191,11 +233,7 @@ export default function HomeScreen() {
                                     <Text className="text-center font-bold text-white text-8xl">
                                         {current?.temp_c}<Text className="text-gray-300 font-light text-8xl">&#176;</Text>
                                     </Text>
-                                    <Text className="text-center text-gray-300 text-2xl">
-                                        Feels like <Text className="text-white font-semibold text-2xl">{current?.feelslike_c}</Text>
-                                        &#176;C
-                                    </Text>
-                                    <Text className="text-center text-white text-2xl tracking-widest">
+                                    <Text className="text-center text-white text-3xl tracking-widest">
                                         {current?.condition?.text}
                                     </Text>
                                 </View>
@@ -242,8 +280,8 @@ export default function HomeScreen() {
                                         <Text className="text-white text-2xl font-bold">{current?.wind_kph} km/h</Text>
                                     </View>
                                     <View className="bg-white/10 rounded-lg p-4 mb-4">
-                                        <Text className="text-white text-lg mt-2">Visibility</Text>
-                                        <Text className="text-white text-2xl font-bold">{current?.vis_km} km</Text>
+                                        <Text className="text-white text-lg mt-2">Feels like</Text>
+                                        <Text className="text-white text-2xl font-bold">{current?.feelslike_c}&#176;C</Text>
                                     </View>
                                 </View>
                                 {/* Sunrise & Sunset */}
