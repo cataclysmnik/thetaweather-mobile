@@ -1,3 +1,6 @@
+import * as Location from 'expo-location'; // Import expo-location
+
+
 import { View, Text, Image, TextInput, TouchableOpacity, Animated, ScrollView, Dimensions, ActivityIndicator, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useCallback, useEffect, useState, useRef } from 'react';
@@ -20,19 +23,16 @@ export default function HomeScreen() {
     const [locations, setLocations] = useState([]);
     const [weather, setWeather] = useState({ current: {}, location: {}, forecast: {} });
     const [loading, setLoading] = useState(true);
-    const [searching, setSearching] = useState(false); // Track search loading state
+    const [searching, setSearching] = useState(false);
 
-    // Ref for TextInput
     const searchInputRef = useRef(null);
 
-    // Animated values
     const translateX = useRef(new Animated.Value(0)).current;
-    const blurRadius = useRef(new Animated.Value(0)).current; // For dynamic blur effect
-    const searchBarOpacity = useRef(new Animated.Value(0)).current; // For search bar opacity
-    const searchBarScaleY = useRef(new Animated.Value(0)).current; // For search bar scaleY animation
+    const blurRadius = useRef(new Animated.Value(0)).current;
+    const searchBarOpacity = useRef(new Animated.Value(0)).current;
+    const searchBarScaleY = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        // Animate search bar when showSearch changes
         if (showSearch) {
             Animated.parallel([
                 Animated.timing(searchBarOpacity, {
@@ -47,7 +47,6 @@ export default function HomeScreen() {
                     useNativeDriver: true,
                 }),
             ]).start(() => {
-                // Focus the TextInput after the animation completes
                 if (searchInputRef.current) {
                     searchInputRef.current.focus();
                 }
@@ -66,7 +65,6 @@ export default function HomeScreen() {
                     useNativeDriver: true,
                 }),
             ]).start(() => {
-                // Dismiss the keyboard when search is toggled off
                 Keyboard.dismiss();
             });
         }
@@ -88,14 +86,14 @@ export default function HomeScreen() {
 
     const handleSearch = value => {
         if (value.length > 2) {
-            setSearching(true); // Show spinner when searching
+            setSearching(true);
             fetchLocations({ cityName: value }).then(data => {
                 setLocations(data);
-                setSearching(false); // Hide spinner when search is complete
+                setSearching(false);
             });
         } else {
             setLocations([]);
-            setSearching(false); // Hide spinner if search query is too short
+            setSearching(false);
         }
     };
 
@@ -105,7 +103,51 @@ export default function HomeScreen() {
 
     const fetchMyWeatherData = async () => {
         let myCity = await getData('city');
-        let cityName = 'Chennai';
+        let cityName = 'Chennai'; // Default city
+    
+        try {
+            // Try to get the user's current location
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                console.log('Permission to access location was denied');
+                // If permission is denied, use the last saved location
+                if (myCity) cityName = myCity;
+            } else {
+                let location = await Location.getCurrentPositionAsync({});
+                const { latitude, longitude } = location.coords;
+    
+                // Fetch weather data using latitude and longitude
+                const data = await fetchWeatherForecast({
+                    lat: latitude,
+                    lon: longitude,
+                    days: '7'
+                });
+                if (data) {
+                    setWeather(data);
+                    setLoading(false);
+                    return; // Exit early if current location is used
+                }
+            }
+    
+            // If current location is unavailable or fails, use the last saved location
+            if (myCity) cityName = myCity;
+            const data = await fetchWeatherForecast({
+                cityName,
+                days: '7'
+            });
+            if (data) {
+                setWeather(data);
+            } else {
+                setWeather({ current: {}, location: {}, forecast: {} }); // Fallback to empty state
+            }
+        } catch (error) {
+            console.error('Error fetching weather data:', error);
+            setWeather({ current: {}, location: {}, forecast: {} }); // Fallback to empty state
+        } finally {
+            setLoading(false);
+        }
+
+        // If current location is unavailable or fails, use the last saved location
         if (myCity) cityName = myCity;
         fetchWeatherForecast({
             cityName,
@@ -129,22 +171,19 @@ export default function HomeScreen() {
         });
     };
 
-    // Handle scroll to update blur radius and opacity
     const handleScroll = Animated.event(
         [{ nativeEvent: { contentOffset: { x: translateX } } }],
         { useNativeDriver: false }
     );
 
-    // Interpolate blur radius based on scroll position
     const interpolatedBlurRadius = translateX.interpolate({
         inputRange: [0, width],
-        outputRange: [70, 70], // Adjust blur intensity here
+        outputRange: [70, 70],
     });
 
-    // Interpolate opacity based on scroll position
     const interpolatedOpacity = translateX.interpolate({
         inputRange: [0, width],
-        outputRange: [0.7, 0.9], // Adjust opacity range here
+        outputRange: [0.7, 0.9],
     });
 
     return (
@@ -154,7 +193,7 @@ export default function HomeScreen() {
             {/* Animated Background */}
             {weather.current && (
                 <Animated.Image
-                    blurRadius={interpolatedBlurRadius} // Dynamic blur radius
+                    blurRadius={interpolatedBlurRadius}
                     source={weatherImages[weather.current.condition?.text]}
                     className="absolute h-full w-full"
                 />
@@ -162,7 +201,7 @@ export default function HomeScreen() {
 
             {/* Animated Overlay */}
             <Animated.View
-                style={{ opacity: interpolatedOpacity }} // Dynamic opacity
+                style={{ opacity: interpolatedOpacity }}
                 className="absolute h-full w-full bg-black"
             />
 
@@ -172,13 +211,12 @@ export default function HomeScreen() {
                 </View>
             ) : (
                 <SafeAreaView className="flex flex-1">
-                    {/* Horizontal ScrollView for Home and Details Screens */}
                     <ScrollView
                         horizontal
                         pagingEnabled
                         showsHorizontalScrollIndicator={false}
-                        onScroll={handleScroll} // Track scroll position
-                        scrollEventThrottle={16} // Smooth scrolling
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
                     >
                         {/* Home Screen */}
                         <View style={{ width }} className="flex-1">
@@ -193,7 +231,7 @@ export default function HomeScreen() {
                                 <View className="flex-row justify-end items-center rounded-full"
                                     style={{ backgroundColor: theme.bgWhite(0.2) }}>
                                     <TextInput
-                                        ref={searchInputRef} // Ref for TextInput
+                                        ref={searchInputRef}
                                         onChangeText={handleTextDebounce}
                                         placeholder='Search City'
                                         placeholderTextColor={'lightgray'}
