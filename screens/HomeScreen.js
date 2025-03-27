@@ -370,7 +370,7 @@ export default function HomeScreen() {
                                 </View>
                                 <ScrollView
                                     horizontal
-                                    contentContainerStyle={{ paddingHorizontal: 15 }}
+                                    contentContainerStyle={{ paddingLeft: 16, paddingRight: 0 }}
                                     showsHorizontalScrollIndicator={false}
                                     nestedScrollEnabled={true}
                                 >
