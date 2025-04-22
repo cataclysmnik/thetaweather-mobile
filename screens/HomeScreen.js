@@ -104,7 +104,7 @@ export default function HomeScreen() {
     const fetchMyWeatherData = async () => {
         let myCity = await getData('city');
         let cityName = 'Chennai'; // Default city
-    
+
         try {
             // Try to get the user's current location
             let { status } = await Location.requestForegroundPermissionsAsync();
@@ -115,7 +115,7 @@ export default function HomeScreen() {
             } else {
                 let location = await Location.getCurrentPositionAsync({});
                 const { latitude, longitude } = location.coords;
-    
+
                 // Fetch weather data using latitude and longitude
                 const data = await fetchWeatherForecast({
                     lat: latitude,
@@ -128,7 +128,7 @@ export default function HomeScreen() {
                     return; // Exit early if current location is used
                 }
             }
-    
+
             // If current location is unavailable or fails, use the last saved location
             if (myCity) cityName = myCity;
             const data = await fetchWeatherForecast({
@@ -244,7 +244,7 @@ export default function HomeScreen() {
                             </Animated.View>
                             <View>
                                 {locations.length > 0 && showSearch ? (
-                                    <View className="absolute self-center w-11/12 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(.9)}}>
+                                    <View className="absolute self-center w-11/12 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(.9) }}>
                                         {locations.map((loc, index) => {
                                             if (!loc?.name) return null;
                                             return (
@@ -276,7 +276,7 @@ export default function HomeScreen() {
                                     </Text>
                                 </View>
                                 <View className='items-center mt-10'>
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={() => toggleSearch(!showSearch)}
                                         style={{ backgroundColor: theme.bgWhite(0.3) }}
                                         className="rounded-full p-3"
@@ -284,7 +284,7 @@ export default function HomeScreen() {
                                         <MagnifyingGlassIcon size="25" color="white" />
                                     </TouchableOpacity>
                                 </View>
-                                
+
                             </View>
                         </View>
 
@@ -366,7 +366,7 @@ export default function HomeScreen() {
                             <View className="mb-8 space-y-3">
                                 <View className="flex-row items-center mx-4 space-x-2 mb-4">
                                     <CalendarDaysIcon size="22" color="white" />
-                                    <Text className="text-white text-base ml-2">Daily Forecast</Text>
+                                    <Text className="text-white text-base ml-2">3-day Forecast</Text>
                                 </View>
                                 <ScrollView
                                     horizontal
