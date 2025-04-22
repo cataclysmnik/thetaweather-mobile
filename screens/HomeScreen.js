@@ -244,7 +244,7 @@ export default function HomeScreen() {
                             </Animated.View>
                             <View>
                                 {locations.length > 0 && showSearch ? (
-                                    <View className="absolute self-center w-11/12 top-10 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(.9) }}>
+                                    <View className="absolute self-center w-11/12 top-12 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(.9) }}>
                                         {locations.map((loc, index) => {
                                             if (!loc?.name) return null;
                                             return (
