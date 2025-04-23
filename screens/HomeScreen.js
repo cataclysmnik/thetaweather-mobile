@@ -31,6 +31,7 @@ export default function HomeScreen() {
     const blurRadius = useRef(new Animated.Value(0)).current;
     const searchBarOpacity = useRef(new Animated.Value(0)).current;
     const searchBarScaleY = useRef(new Animated.Value(0)).current;
+    const textFadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         if (showSearch) {
@@ -69,6 +70,18 @@ export default function HomeScreen() {
             });
         }
     }, [showSearch]);
+
+    useEffect(() => {
+        if (!loading) {
+            Animated.timing(textFadeAnim, {
+                toValue: 1,
+                duration: 1000,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            textFadeAnim.setValue(0);
+        }
+    }, [loading]);
 
     const handleLocation = (loc) => {
         setLocations([]);
@@ -218,8 +231,13 @@ export default function HomeScreen() {
                         onScroll={handleScroll}
                         scrollEventThrottle={16}
                     >
-                        {/* Home Screen */}
-                        <View style={{ width }} className="flex-1">
+                        <Animated.View
+                            style={{
+                                opacity: textFadeAnim,
+                                width,
+                            }}
+                            className="flex-1"
+                        >
                             {/* Search section */}
                             <Animated.View
                                 style={{
@@ -286,10 +304,15 @@ export default function HomeScreen() {
                                 </View>
 
                             </View>
-                        </View>
+                        </Animated.View>
 
-                        {/* Details Screen */}
-                        <View style={{ width }} className="flex-1 justify-center">
+                        <Animated.View
+                            style={{
+                                opacity: textFadeAnim,
+                                width,
+                            }}
+                            className="flex-1 justify-center"
+                        >
                             <Text className="text-white text-2xl font-bold px-4 my-2">Weather Details</Text>
                             {/* Weather Details Cards */}
                             <View className="flex-row flex-wrap px-4 justify-between">
@@ -394,7 +417,7 @@ export default function HomeScreen() {
                                     })}
                                 </ScrollView>
                             </View>
-                        </View>
+                        </Animated.View>
                     </ScrollView>
                 </SafeAreaView>
             )}
