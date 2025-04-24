@@ -235,6 +235,17 @@ export default function HomeScreen() {
                             >
                                 <View className="relative flex-row justify-end items-center rounded-full"
                                     style={{ backgroundColor: theme.bgWhite(0.2) }}>
+                                    <View className='pl-6 h-14 p-4' style={{ position: 'absolute', left: 0, top: 1 }}>
+                                        {firstSuggestion && !searching && (
+                                            <Text
+                                                style={{ color: 'rgba(255,255,255,0.3)' }}
+                                                numberOfLines={1}
+                                            // ellipsizeMode="tail"
+                                            >
+                                                {firstSuggestion?.name}, {firstSuggestion?.country}
+                                            </Text>
+                                        )}
+                                    </View>
                                     <TextInput
                                         ref={searchInputRef}
                                         onChangeText={(text) => {
