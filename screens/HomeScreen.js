@@ -24,6 +24,7 @@ export default function HomeScreen() {
     const [weather, setWeather] = useState({ current: {}, location: {}, forecast: {} });
     const [loading, setLoading] = useState(true);
     const [searching, setSearching] = useState(false);
+    const [firstSuggestion, setFirstSuggestion] = useState(null);
 
     const searchInputRef = useRef(null);
 
@@ -85,6 +86,7 @@ export default function HomeScreen() {
 
     const handleLocation = (loc) => {
         setLocations([]);
+        setFirstSuggestion(null);
         toggleSearch(false);
         setLoading(true);
         fetchWeatherForecast({
@@ -102,10 +104,12 @@ export default function HomeScreen() {
             setSearching(true);
             fetchLocations({ cityName: value }).then(data => {
                 setLocations(data);
+                setFirstSuggestion(data?.[0] || null); // Set first suggestion
                 setSearching(false);
             });
         } else {
             setLocations([]);
+            setFirstSuggestion(null);
             setSearching(false);
         }
     };
@@ -117,7 +121,6 @@ export default function HomeScreen() {
     const fetchMyWeatherData = async () => {
         let myCity = await getData('city');
         let cityName = 'Chennai'; // Default city
-
         try {
             // Try to get the user's current location
             let { status } = await Location.requestForegroundPermissionsAsync();
@@ -128,7 +131,6 @@ export default function HomeScreen() {
             } else {
                 let location = await Location.getCurrentPositionAsync({});
                 const { latitude, longitude } = location.coords;
-
                 // Fetch weather data using latitude and longitude
                 const data = await fetchWeatherForecast({
                     lat: latitude,
@@ -141,7 +143,6 @@ export default function HomeScreen() {
                     return; // Exit early if current location is used
                 }
             }
-
             // If current location is unavailable or fails, use the last saved location
             if (myCity) cityName = myCity;
             const data = await fetchWeatherForecast({
@@ -159,20 +160,9 @@ export default function HomeScreen() {
         } finally {
             setLoading(false);
         }
-
-        // If current location is unavailable or fails, use the last saved location
-        if (myCity) cityName = myCity;
-        fetchWeatherForecast({
-            cityName,
-            days: '7'
-        }).then(data => {
-            setWeather(data);
-            setLoading(false);
-        });
     };
 
     const handleTextDebounce = useCallback(debounce(handleSearch, 500), []);
-
     const { current, location, forecast } = weather;
 
     const formatLocalTime = (timeEpoch, timezone) => {
@@ -202,7 +192,6 @@ export default function HomeScreen() {
     return (
         <View className="flex-1 relative">
             <StatusBar style='light' />
-
             {/* Animated Background */}
             {weather.current && (
                 <Animated.Image
@@ -211,13 +200,11 @@ export default function HomeScreen() {
                     className="absolute h-full w-full"
                 />
             )}
-
             {/* Animated Overlay */}
             <Animated.View
                 style={{ opacity: interpolatedOpacity }}
                 className="absolute h-full w-full bg-black"
             />
-
             {loading ? (
                 <View className="flex-1 flex-row justify-center items-center">
                     <Progress.CircleSnail thickness={10} size={140} color="#cccccc" />
@@ -246,11 +233,20 @@ export default function HomeScreen() {
                                 }}
                                 className="mx-4 relative z-50 top-10"
                             >
-                                <View className="flex-row justify-end items-center rounded-full"
+                                <View className="relative flex-row justify-end items-center rounded-full"
                                     style={{ backgroundColor: theme.bgWhite(0.2) }}>
                                     <TextInput
                                         ref={searchInputRef}
-                                        onChangeText={handleTextDebounce}
+                                        onChangeText={(text) => {
+                                            handleTextDebounce(text);
+                                            if (!text) setFirstSuggestion(null);
+                                        }}
+                                        onSubmitEditing={() => {
+                                            if (firstSuggestion) {
+                                                handleLocation(firstSuggestion);
+                                            }
+                                        }}
+                                        returnKeyType="search"
                                         placeholder='Search City'
                                         placeholderTextColor={'lightgray'}
                                         className="pl-6 h-14 pb-2 p-4 pt-2 flex-1 text-base text-white"
@@ -302,7 +298,6 @@ export default function HomeScreen() {
                                         <MagnifyingGlassIcon size="25" color="white" />
                                     </TouchableOpacity>
                                 </View>
-
                             </View>
                         </Animated.View>
 
@@ -407,8 +402,8 @@ export default function HomeScreen() {
                                                 className="flex justify-center items-center w-36 rounded-3xl py-3 space-y-1 mr-4"
                                                 style={{ backgroundColor: theme.bgWhite(0.15) }}
                                             >
-                                                <Image source={weatherImages[item?.day?.condition?.text]} className="h-11 w-11" />
                                                 <Text className="text-white">{dayName}</Text>
+                                                <Image source={weatherImages[item?.day?.condition?.text]} className="h-11 w-11" />
                                                 <Text className="text-white text-xl font-semibold">
                                                     {item?.day?.avgtemp_c}&#176;
                                                 </Text>
