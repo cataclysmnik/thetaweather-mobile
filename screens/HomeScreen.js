@@ -25,6 +25,7 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(true);
     const [searching, setSearching] = useState(false);
     const [firstSuggestion, setFirstSuggestion] = useState(null);
+    const [recentSearches, setRecentSearches] = useState([]);
 
     const searchInputRef = useRef(null);
 
@@ -84,11 +85,31 @@ export default function HomeScreen() {
         }
     }, [loading]);
 
-    const handleLocation = (loc) => {
+    const handleLocation = async (loc) => {
         setLocations([]);
         setFirstSuggestion(null);
         toggleSearch(false);
         setLoading(true);
+
+        // Update recent searches
+        const newSearch = {
+            id: loc.id || Date.now(),
+            name: loc.name,
+            country: loc.country
+        };
+
+        let updatedSearches = [newSearch];
+        if (recentSearches.length > 0) {
+            // Remove if already exists
+            updatedSearches = [
+                newSearch,
+                ...recentSearches.filter(item => item.name !== loc.name)
+            ].slice(0, 5); // Keep only last 5
+        }
+
+        setRecentSearches(updatedSearches);
+        await storeData('recentSearches', updatedSearches);
+
         fetchWeatherForecast({
             cityName: loc.name,
             days: '7'
@@ -116,6 +137,12 @@ export default function HomeScreen() {
 
     useEffect(() => {
         fetchMyWeatherData();
+        // Load recent searches
+        getData('recentSearches').then(searches => {
+            if (searches && searches.length > 0) {
+                setRecentSearches(searches);
+            }
+        });
     }, []);
 
     const fetchMyWeatherData = async () => {
@@ -240,7 +267,6 @@ export default function HomeScreen() {
                                             <Text
                                                 style={{ color: 'rgba(255,255,255,0.3)' }}
                                                 numberOfLines={1}
-                                            // ellipsizeMode="tail"
                                             >
                                                 {firstSuggestion?.name}, {firstSuggestion?.country}
                                             </Text>
@@ -269,12 +295,28 @@ export default function HomeScreen() {
                             </Animated.View>
                             <View>
                                 {locations.length > 0 && showSearch ? (
-                                    <View className="absolute self-center w-11/12 top-12 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(.9) }}>
+                                    <View className="absolute self-center w-11/12 top-12 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(1) }}>
                                         {locations.map((loc, index) => {
                                             if (!loc?.name) return null;
                                             return (
                                                 <TouchableOpacity
                                                     key={loc.id ? `loc-${loc.id}` : `loc-${loc.name}-${index}`}
+                                                    onPress={() => handleLocation(loc)}
+                                                    className="flex-row items-center border-0 p-3 px-4 mb-1"
+                                                >
+                                                    <MapPinIcon size="20" color="gray" />
+                                                    <Text className="text-black text-lg ml-2">{loc?.name}, {loc?.country}</Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                ) : showSearch && recentSearches.length > 0 && locations.length === 0 ? (
+                                    <View className="absolute self-center w-11/12 top-12 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(1) }}>
+                                        <Text className="text-gray-500 text-sm px-4 pt-3">Recent searches</Text>
+                                        {recentSearches.map((loc, index) => {
+                                            return (
+                                                <TouchableOpacity
+                                                    key={`recent-${loc.id || index}`}
                                                     onPress={() => handleLocation(loc)}
                                                     className="flex-row items-center border-0 p-3 px-4 mb-1"
                                                 >
