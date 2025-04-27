@@ -35,9 +35,17 @@ export default function HomeScreen() {
     const searchBarOpacity = useRef(new Animated.Value(0)).current;
     const searchBarScaleY = useRef(new Animated.Value(0)).current;
     const textFadeAnim = useRef(new Animated.Value(0)).current;
+    const suggestionsOpacity = useRef(new Animated.Value(0)).current;
+    const suggestionsTranslateY = useRef(new Animated.Value(-20)).current;
 
     useEffect(() => {
         if (showSearch) {
+            // Focus the input immediately
+            if (searchInputRef.current) {
+                searchInputRef.current.focus();
+            }
+
+            // Run animations in parallel
             Animated.parallel([
                 Animated.timing(searchBarOpacity, {
                     toValue: 1,
@@ -50,12 +58,11 @@ export default function HomeScreen() {
                     bounciness: 10,
                     useNativeDriver: true,
                 }),
-            ]).start(() => {
-                if (searchInputRef.current) {
-                    searchInputRef.current.focus();
-                }
-            });
+            ]).start();
         } else {
+            // Dismiss keyboard first
+            Keyboard.dismiss();
+
             Animated.parallel([
                 Animated.timing(searchBarOpacity, {
                     toValue: 0,
@@ -68,9 +75,7 @@ export default function HomeScreen() {
                     bounciness: 10,
                     useNativeDriver: true,
                 }),
-            ]).start(() => {
-                Keyboard.dismiss();
-            });
+            ]).start();
         }
     }, [showSearch]);
 
@@ -85,6 +90,39 @@ export default function HomeScreen() {
             textFadeAnim.setValue(0);
         }
     }, [loading]);
+
+    useEffect(() => {
+        if (showSearch) {
+            // Reset position before animating in
+            suggestionsTranslateY.setValue(-20);
+            Animated.parallel([
+                Animated.timing(suggestionsOpacity, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(suggestionsTranslateY, {
+                    toValue: 0,
+                    speed: 12,
+                    bounciness: 4,
+                    useNativeDriver: true,
+                })
+            ]).start();
+        } else {
+            Animated.parallel([
+                Animated.timing(suggestionsOpacity, {
+                    toValue: 0,
+                    duration: 200,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(suggestionsTranslateY, {
+                    toValue: -20,
+                    duration: 200,
+                    useNativeDriver: true,
+                })
+            ]).start();
+        }
+    }, [showSearch]);
 
     const handleLocation = async (loc) => {
         setLocations([]);
@@ -335,7 +373,16 @@ export default function HomeScreen() {
                             </Animated.View>
                             <View>
                                 {locations.length > 0 && showSearch ? (
-                                    <View className="absolute self-center w-11/12 top-12 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(1) }}>
+                                    <Animated.View
+                                        className="absolute self-center w-11/12 top-12 rounded-3xl overflow-hidden"
+                                        style={{
+                                            opacity: suggestionsOpacity,
+                                            transform: [{ translateY: suggestionsTranslateY }],
+                                            elevation: 10,
+                                            zIndex: 50,
+                                            backgroundColor: theme.bgWhite(1),
+                                        }}
+                                    >
                                         {locations.map((loc, index) => {
                                             if (!loc?.name) return null;
                                             return (
@@ -349,9 +396,18 @@ export default function HomeScreen() {
                                                 </TouchableOpacity>
                                             );
                                         })}
-                                    </View>
+                                    </Animated.View>
                                 ) : showSearch && (recentSearches.length > 0 || currentLocation) ? (
-                                    <View className="absolute self-center w-11/12 top-12 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(1) }}>
+                                    <Animated.View
+                                        className="absolute self-center w-11/12 top-12 rounded-3xl overflow-hidden"
+                                        style={{
+                                            opacity: suggestionsOpacity,
+                                            transform: [{ translateY: suggestionsTranslateY }],
+                                            elevation: 10,
+                                            zIndex: 50,
+                                            backgroundColor: theme.bgWhite(1),
+                                        }}
+                                    >
                                         {/* Your Location Option */}
                                         {currentLocation && (
                                             <>
@@ -383,7 +439,7 @@ export default function HomeScreen() {
                                                 })}
                                             </>
                                         )}
-                                    </View>
+                                    </Animated.View>
                                 ) : null}
                             </View>
                             {/* Forecast section */}
