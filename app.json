@@ -7,11 +7,6 @@
     "icon": "./assets/images/adaptive-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/splash-icon-dark.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#222222"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -27,6 +22,30 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#232323",
+          "image": "./assets/images/splash-icon.png",
+          "dark": {
+            "image": "./assets/images/splash-icon-dark.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourceslnReleaseBuilds": true,
+            "useLegacyPackaging": true
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "7a8a6ded-720b-478b-bdc8-d34aa921209b"
