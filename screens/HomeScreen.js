@@ -26,6 +26,7 @@ export default function HomeScreen() {
     const [searching, setSearching] = useState(false);
     const [firstSuggestion, setFirstSuggestion] = useState(null);
     const [recentSearches, setRecentSearches] = useState([]);
+    const [currentLocation, setCurrentLocation] = useState(null);
 
     const searchInputRef = useRef(null);
 
@@ -120,6 +121,41 @@ export default function HomeScreen() {
         });
     };
 
+    const handleCurrentLocation = async () => {
+        toggleSearch(false);
+        setLoading(true);
+        try {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                console.log('Permission to access location was denied');
+                setLoading(false);
+                return;
+            }
+
+            let location = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+
+            // Fetch weather data using latitude and longitude
+            const data = await fetchWeatherForecast({
+                lat: latitude,
+                lon: longitude,
+                days: '7'
+            });
+
+            if (data) {
+                setWeather(data);
+                setCurrentLocation({
+                    name: data.location.name,
+                    country: data.location.country
+                });
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error('Error getting current location:', error);
+            setLoading(false);
+        }
+    };
+
     const handleSearch = value => {
         if (value.length > 2) {
             setSearching(true);
@@ -166,6 +202,10 @@ export default function HomeScreen() {
                 });
                 if (data) {
                     setWeather(data);
+                    setCurrentLocation({
+                        name: data.location.name,
+                        country: data.location.country
+                    });
                     setLoading(false);
                     return; // Exit early if current location is used
                 }
@@ -223,7 +263,7 @@ export default function HomeScreen() {
             {weather.current && (
                 <Animated.Image
                     blurRadius={interpolatedBlurRadius}
-                    source={weatherImages[weather.current.condition?.text]}
+                    source={weatherImages[weather.current.condition?.text?.trim().toLowerCase()]}
                     className="absolute h-full w-full"
                 />
             )}
@@ -310,21 +350,39 @@ export default function HomeScreen() {
                                             );
                                         })}
                                     </View>
-                                ) : showSearch && recentSearches.length > 0 && locations.length === 0 ? (
+                                ) : showSearch && (recentSearches.length > 0 || currentLocation) ? (
                                     <View className="absolute self-center w-11/12 top-12 rounded-3xl" style={{ elevation: 10, zIndex: 50, backgroundColor: theme.bgWhite(1) }}>
-                                        <Text className="text-gray-500 text-sm px-4 pt-3">Recent searches</Text>
-                                        {recentSearches.map((loc, index) => {
-                                            return (
+                                        {/* Your Location Option */}
+                                        {currentLocation && (
+                                            <>
+                                                <Text className="text-gray-500 text-sm px-4 pt-3">Your Location</Text>
                                                 <TouchableOpacity
-                                                    key={`recent-${loc.id || index}`}
-                                                    onPress={() => handleLocation(loc)}
+                                                    onPress={handleCurrentLocation}
                                                     className="flex-row items-center border-0 p-3 px-4 mb-1"
                                                 >
                                                     <MapPinIcon size="20" color="gray" />
-                                                    <Text className="text-black text-lg ml-2">{loc?.name}, {loc?.country}</Text>
+                                                    <Text className="text-black text-lg ml-2">{currentLocation.name}, {currentLocation.country}</Text>
                                                 </TouchableOpacity>
-                                            );
-                                        })}
+                                            </>
+                                        )}
+                                        {/* Recent Searches */}
+                                        {recentSearches.length > 0 && (
+                                            <>
+                                                <Text className="text-gray-500 text-sm px-4 pt-3">Recent searches</Text>
+                                                {recentSearches.map((loc, index) => {
+                                                    return (
+                                                        <TouchableOpacity
+                                                            key={`recent-${loc.id || index}`}
+                                                            onPress={() => handleLocation(loc)}
+                                                            className="flex-row items-center border-0 p-3 px-4 mb-1"
+                                                        >
+                                                            <MapPinIcon size="20" color="gray" />
+                                                            <Text className="text-black text-lg ml-2">{loc?.name}, {loc?.country}</Text>
+                                                        </TouchableOpacity>
+                                                    );
+                                                })}
+                                            </>
+                                        )}
                                     </View>
                                 ) : null}
                             </View>
@@ -424,7 +482,7 @@ export default function HomeScreen() {
                                                 style={{ backgroundColor: theme.bgWhite(0.15) }}
                                             >
                                                 <Text className="text-white">{time}</Text>
-                                                <Image source={weatherImages[hour?.condition?.text]} className="h-11 w-11 m-4" />
+                                                <Image source={weatherImages[hour?.condition?.text?.trim().toLowerCase()]} className="h-11 w-11 m-4" />
                                                 <Text className="text-white text-xl font-semibold">
                                                     {hour?.temp_c}&#176;
                                                 </Text>
@@ -456,7 +514,7 @@ export default function HomeScreen() {
                                                 style={{ backgroundColor: theme.bgWhite(0.15) }}
                                             >
                                                 <Text className="text-white">{dayName}</Text>
-                                                <Image source={weatherImages[item?.day?.condition?.text]} className="h-11 w-11" />
+                                                <Image source={weatherImages[item?.day?.condition?.text?.trim().toLowerCase()]} className="h-11 w-11" />
                                                 <Text className="text-white text-xl font-semibold">
                                                     {item?.day?.avgtemp_c}&#176;
                                                 </Text>
