@@ -13,9 +13,7 @@ Head over to [releases](https://github.com/cataclysmnik/thetaweather-mobile/rele
 - "Your location" and "Recent searches" on search panel.
 
 ## Screenshots
-![theta1](https://github.com/user-attachments/assets/75a96090-6bca-4dcf-bfe9-70b29963729a)
-![theta2](https://github.com/user-attachments/assets/3d023c40-5628-4f5b-81fe-c34a20ace5f5)
-![theta3](https://github.com/user-attachments/assets/de9f3f89-cf68-4c12-a57c-866abf4c86bf)
+<img src="https://github.com/user-attachments/assets/75a96090-6bca-4dcf-bfe9-70b29963729a" width="30%"></img> <img src="https://github.com/user-attachments/assets/3d023c40-5628-4f5b-81fe-c34a20ace5f5" width="30%"></img> <img src="https://github.com/user-attachments/assets/de9f3f89-cf68-4c12-a57c-866abf4c86bf" width="30%"></img> 
 
 ## Acknowledgements
 - [Code with Nomi](https://youtu.be/953vyZMO4cM)
